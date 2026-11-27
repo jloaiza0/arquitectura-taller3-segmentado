@@ -1,0 +1,1573 @@
+\documentclass[11pt,letterpaper]{article}
+
+% ------------------------------------------------------------------
+% Paquetes
+% ------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish,es-tabla,es-noshorthands]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=2.3cm,headheight=14pt]{geometry}
+\usepackage{booktabs,array,tabularx,multirow,longtable}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,fit,backgrounds,shapes.geometric}
+\usepackage{listings}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={,}}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+\usepackage{caption}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+
+% ------------------------------------------------------------------
+% Datos del documento (editar aqui)
+% ------------------------------------------------------------------
+\newcommand{\universidad}{Universidad Tecnol\'ogica de Pereira}
+\newcommand{\facultad}{Facultad de Ingenier\'ias}
+\newcommand{\materia}{Arquitectura de Computadores}
+\newcommand{\estudiante}{Juan Pablo Loaiza Bedoya}
+% Compa\~neros de equipo (uno por l\'inea, separados con \\):
+\newcommand*{\companeros}{Javier Parra Gonzales \\ Estiven Mu\~noz Montoya}
+% Para poner el docente, escribir su nombre dentro de las llaves:
+\newcommand*{\docente}{}
+\newcommand{\fecha}{16 de noviembre de 2026}
+\newcommand{\numtaller}{3}
+\newcommand{\titulotaller}{El hardware se protege solo}
+
+% ------------------------------------------------------------------
+% Estilo
+% ------------------------------------------------------------------
+\definecolor{datos}{RGB}{31,94,168}
+\definecolor{control}{RGB}{190,40,40}
+\definecolor{reloj}{RGB}{30,130,60}
+\definecolor{nuevo}{RGB}{200,110,0}
+\definecolor{gris}{RGB}{245,245,245}
+\definecolor{comentario}{RGB}{90,120,90}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small \materia{} -- Taller \numtaller}
+\fancyhead[R]{\small UTP}
+\fancyfoot[C]{\small \thepage}
+
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.15}
+
+\lstdefinelanguage{SV}{
+  morekeywords={module,endmodule,input,output,logic,parameter,localparam,int,
+    assign,always_comb,always_ff,always,posedge,negedge,if,else,case,endcase,
+    default,begin,end,import,function,endfunction,automatic,package,endpackage,
+    integer,initial,for,string,task,endtask},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+}
+\lstdefinelanguage{RVASM}{
+  morekeywords={addi,add,sub,and,or,xor,slt,sltu,lw,lb,lbu,lh,lhu,sw,sb,sh,
+    beq,bne,blt,bge,bltu,bgeu,jal,jalr,lui,auipc,nop},
+  sensitive=true,
+  morecomment=[l]{\#},
+}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{datos}\bfseries,
+  commentstyle=\color{comentario}\itshape,
+  stringstyle=\color{control},
+  backgroundcolor=\color{gris},
+  frame=single, rulecolor=\color{black!25},
+  columns=fullflexible, keepspaces=true,
+  breaklines=true, breakatwhitespace=false,
+  showstringspaces=false, tabsize=4,
+  numbers=left, numberstyle=\tiny\color{black!50}, numbersep=6pt,
+  xleftmargin=14pt, upquote=true,
+  aboveskip=6pt, belowskip=6pt,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
+           {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
+           {ñ}{{\~n}}1 {Ñ}{{\~N}}1 {ü}{{\"u}}1,
+}
+
+\tcbset{
+  respuesta/.style={colback=green!4,colframe=reloj!70!black,boxrule=0.8pt,
+    arc=2pt,left=6pt,right=6pt,top=4pt,bottom=4pt,fonttitle=\bfseries\small},
+  enunciado/.style={colback=black!3,colframe=black!35,boxrule=0.5pt,arc=2pt,
+    left=6pt,right=6pt,top=3pt,bottom=3pt,fonttitle=\bfseries\small},
+  revisar/.style={colback=orange!6,colframe=nuevo,boxrule=0.8pt,arc=2pt,
+    left=6pt,right=6pt,top=3pt,bottom=3pt,fonttitle=\bfseries\small},
+}
+\newtcolorbox{respuesta}[1][Resultado]{respuesta,title={#1}}
+\newtcolorbox{enunciado}[1][Enunciado]{enunciado,title={#1}}
+\newtcolorbox{supuesto}[1][Decisi\'on de dise\~no]{revisar,title={#1}}
+
+\newcommand{\cod}[1]{\texttt{#1}}
+\newcommand{\sig}[1]{\textcolor{control}{\texttt{#1}}}
+
+% ------------------------------------------------------------------
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2.0cm}
+  {\Huge\bfseries Taller \numtaller\par}
+  \vspace{0.5cm}
+  {\LARGE \titulotaller\par}
+  \vfill
+  {\large Presentado por:\par}
+  \vspace{0.2cm}
+  {\large\bfseries \estudiante\par}
+  \ifx\companeros\empty\else
+    \vspace{0.2cm}{\large\bfseries \companeros\par}
+  \fi
+  \ifx\docente\empty\else
+    \vspace{0.8cm}
+    {\large Docente:\par}\vspace{0.2cm}{\large \docente\par}
+  \fi
+  \vspace{2.0cm}
+  {\large \materia\par}
+  \vspace{0.3cm}
+  {\Large\bfseries \universidad\par}
+  \vspace{0.2cm}
+  {\large \facultad\par}
+  \vspace{0.2cm}
+  {\large Ingenier\'ia de Sistemas y Computaci\'on\par}
+  \vspace{0.8cm}
+  {\large Pereira, \fecha\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Introducci\'on}
+% =====================================================================
+\begin{enunciado}[Enunciado (resumen del PDF \emph{Taller 3 --- El hardware se protege solo})]
+Partir del procesador monociclo del Taller 2 (el propio, que ya pasa su regresi\'on), cortarlo en cinco
+etapas y a\~nadirle las dos unidades que hacen que un procesador segmentado funcione sin ayuda del
+programador. Cuatro fases: (1) un registro de segmentaci\'on parametrizable con carga, habilitaci\'on y
+borrado s\'incrono, y el corte del monociclo en cinco etapas; (2) la unidad de \emph{forwarding};
+(3) la unidad de detecci\'on de riesgos; (4) el procesador segmentado cableado. Se entrega el
+repositorio, los programas de prueba y un archivo corto en texto con: qu\'e situaciones se probaron y con
+qu\'e programa, qu\'e sali\'o mal y c\'omo se encontr\'o, y cu\'antos ciclos tarda un programa en el
+segmentado frente al monociclo. \textbf{Entrega: s\'abado 5 de diciembre, 23:59.}
+\end{enunciado}
+
+La gu\'ia describe el comportamiento de cada pieza sin dar c\'odigo; el trabajo consiste en traducir esa
+descripci\'on a HDL. El informe sigue la misma estructura: para cada pieza se resume lo que pide la
+gu\'ia, se explica la soluci\'on adoptada y se presenta el m\'odulo que la implementa. Al final se
+presentan las pruebas realizadas y sus resultados.
+
+\textbf{Metodolog\'ia de verificaci\'on.} El dise\~no se simul\'o con Icarus Verilog 12 (\cod{-g2012 -Wall}). Cada
+programa corre a la vez en el monociclo del Taller~2, que hace de \emph{modelo de referencia}, y en el
+segmentado, y se exige que el estado final (32 registros y 64 palabras de memoria) sea id\'entico.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}l l l@{}}
+\toprule
+\textbf{Archivo} & \textbf{Fase} & \textbf{Qu\'e es} \\
+\midrule
+\cod{rtl/pipe\_reg.sv}         & 1 & registro de segmentaci\'on: \cod{en}, \cod{clr}, \cod{rst} \\
+\cod{rtl/forwarding\_unit.sv}  & 2 & unidad de adelantamiento (vive en EX) \\
+\cod{rtl/hazard\_unit.sv}      & 3 & unidad de detecci\'on de riesgos (vive en ID) \\
+\cod{rtl/riscv\_segmentado.sv} & 1 y 4 & el corte en cinco etapas y el cableado completo \\
+\cod{tb/tb\_unidades.sv}       & pruebas & las tres piezas por separado (tablas de las secciones 6 y 12) \\
+\cod{tb/tb\_pipeline.sv}       & pruebas & 11 programas: segmentado contra monociclo, ciclos \\
+\cod{prog/*.s}                 & pruebas & 8 programas dirigidos nuevos + los 3 del Taller 2 \\
+\cod{INFORME.txt}              & entrega & el archivo corto en texto que pide la gu\'ia \\
+\bottomrule
+\end{tabular}
+\caption{Lo que se a\~nadi\'o al repositorio del Taller 2. Ning\'un m\'odulo del Taller 2 se modific\'o.}
+\end{table}
+
+% =====================================================================
+\section{Fase 1: de monociclo a cinco etapas}
+% =====================================================================
+
+\subsection{D\'onde se corta}
+\begin{center}\small
+\begin{tabular}{@{}c l l@{}}
+\toprule
+\textbf{Etapa} & \textbf{Qu\'e hace} & \textbf{M\'odulos del Taller 2 que usa} \\
+\midrule
+IF  & busca la instrucci\'on & \cod{instruction\_memory}, \cod{pc}, sumador de $PC+4$, \cod{mux\_pc} \\
+ID  & decodifica y lee el banco & \cod{control\_unit}, \cod{register\_file}, \cod{imm\_gen} \\
+EX  & calcula & ALU, sumador del destino, \cod{mux\_jalr}, multiplexores de operando \\
+MEM & lee o escribe memoria & \cod{data\_memory} \\
+WB  & escribe en el banco & multiplexor de \cod{ResultSrc} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{El registro de segmentaci\'on (\cod{pipe\_reg.sv})}
+\begin{enunciado}
+Un registro de ancho parametrizable, con carga s\'incrona, habilitaci\'on y borrado s\'incrono. Los tres
+puertos hacen falta: sin habilitaci\'on no se puede parar; sin borrado no se puede meter una burbuja.
+\end{enunciado}
+Un solo m\'odulo sirve para los cuatro registros: cada uno empaqueta sus campos en un vector
+\cod{d}/\cod{q} del ancho necesario. Prioridad: \cod{rst} y \cod{clr} ganan sobre \cod{en}. Un
+registro puesto a cero \emph{es} una instrucci\'on muerta: \cod{RegWrite = MemWrite = Branch = Jump = 0}
+y \cod{rd = x0}. Esa es la burbuja: un \cod{nop} que nadie escribi\'o y que no ocupa memoria.
+
+\begin{lstlisting}[language=SV,title={\small\ttfamily rtl/pipe\_reg.sv}]
+module pipe_reg #(
+    parameter int W = 32
+)(
+    input  logic         clk,
+    input  logic         rst,
+    input  logic         en,
+    input  logic         clr,
+    input  logic [W-1:0] d,
+    output logic [W-1:0] q
+);
+
+    always_ff @(posedge clk) begin
+        if (rst || clr) q <= '0;
+        else if (en)    q <= d;
+    end
+
+endmodule
+\end{lstlisting}
+
+
+\subsection{Qu\'e guarda cada registro, y cu\'antos bits}
+La regla de la gu\'ia: \emph{lo que no se guarda, se pierde}. La tabla~\ref{tab:anchos} lista los campos
+de cada registro tal como quedaron en \cod{riscv\_segmentado.sv} y verifica el ancho declarado en
+cada instancia.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l X r@{}}
+\toprule
+\textbf{Registro} & \textbf{Campos} & \textbf{Ancho} \\
+\midrule
+IF/ID  & \cod{Instr, PC, PC+4} & $3\cdot 32 = \mathbf{96}$ \\
+ID/EX  & \cod{RD1, RD2, PC, PC+4, ImmExt} ($5\cdot 32 = 160$); \cod{rs1, rs2, rd} ($3\cdot 5 = 15$);
+         \cod{funct3} (3); control: \cod{RegWrite}~1, \cod{ResultSrc}~2, \cod{MemWrite}~1, \cod{Jump}~1,
+         \cod{Branch}~1, \cod{Jalr}~1, \cod{ALUControl}~4, \cod{ALUSrcA}~1, \cod{ALUSrcB}~1 (13)
+       & $160+15+3+13 = \mathbf{191}$ \\
+EX/MEM & resultado definitivo, dato a escribir, \cod{PC+4}, destino del salto ($4\cdot 32 = 128$);
+         \cod{rd} (5); \cod{funct3} (3); \cod{RegWrite}~1, \cod{ResultSrc}~2, \cod{MemWrite}~1 (4)
+       & $128+5+3+4 = \mathbf{140}$ \\
+MEM/WB & dato le\'ido, resultado, \cod{PC+4} ($3\cdot 32 = 96$); \cod{rd} (5); \cod{RegWrite}~1,
+         \cod{ResultSrc}~2 (3) & $96+5+3 = \mathbf{104}$ \\
+\bottomrule
+\end{tabularx}
+\caption{Contenido y ancho de los cuatro registros de segmentaci\'on.}
+\label{tab:anchos}
+\end{table}
+
+Tres campos que sorprenden, todos presentes:
+\begin{itemize}
+\item \textbf{\cod{PC} hasta ID/EX}, porque el destino $PC+\mathit{imm}$ se calcula en EX con el PC
+  \emph{de esa instrucci\'on}, no con el de IF, que ya avanz\'o dos posiciones.
+\item \textbf{\cod{PC+4} hasta MEM/WB}, porque \cod{jal} y \cod{jalr} escriben la direcci\'on de retorno.
+\item \textbf{\cod{rs1} y \cod{rs2} hasta EX}, porque la unidad de forwarding compara
+  \emph{n\'umeros} de registro, no valores.
+\end{itemize}
+
+\begin{supuesto}[Decisi\'on de dise\~no: campos adicionales en los registros de segmentaci\'on]
+La tabla de la secci\'on~2 de la gu\'ia no incluye tres se\~nales que el procesador del curso necesita; por eso se a\~nadieron:
+\begin{itemize}
+\item \cod{funct3} viaja por ID/EX y EX/MEM. Hace falta en EX, para decidir el salto (\cod{beq},
+  \cod{bne}, \ldots), y en MEM, porque decide el ancho del acceso a memoria (\cod{lb}/\cod{lh}/\cod{lw}).
+  En el monociclo iba directo de la instrucci\'on a la memoria, pero en MEM la instrucci\'on ya no
+  est\'a.
+\item \cod{ALUSrcA} y \cod{Jalr} viajan como se\~nales de EX: la primera la usa \cod{auipc} y la
+  segunda elige el destino de \cod{jalr}.
+\end{itemize}
+\end{supuesto}
+
+\subsection{Las se\~nales de control y la decisi\'on del salto}
+Todas las se\~nales de control se generan en ID con la misma \cod{control\_unit} del Taller~2 y viajan
+con la instrucci\'on hasta la etapa en la que se consumen: \sig{ALUSrcA}, \sig{ALUSrc},
+\sig{ALUControl}, \sig{Branch}, \sig{Jump} y \sig{Jalr} en EX; \sig{MemWrite} en MEM;
+\sig{RegWrite} y \sig{ResultSrc} en WB.
+
+\begin{supuesto}[Decisi\'on de dise\~no: d\'onde se decide \cod{PCSrc}]
+En el monociclo, \cod{control\_unit} calcula \cod{pc\_src} a partir de las banderas de la ALU. En el
+segmentado las banderas existen en EX, pero la unidad de control vive en ID. Para no modificar el
+m\'odulo (la gu\'ia pide reutilizarlo ``sin un cambio''), se instancia en ID con las banderas a cero y
+su salida \cod{pc\_src} sin conectar, y en EX se repite su bloque~3 (la tabla de \cod{funct3} contra
+\cod{zero}/\cod{less}/\cod{less\_u}) sobre \cod{BranchE}, \cod{funct3E} y las banderas de la ALU:
+$\boxed{\mathit{PCSrcE} = \mathit{BranchTakenE} \vee \mathit{JumpE}}$. Las banderas se calculan con
+los operandos \emph{ya adelantados}, as\'i que un salto que depende de la instrucci\'on anterior compara
+el valor bueno.
+\end{supuesto}
+
+\begin{supuesto}[Decisi\'on de dise\~no: escritura del banco en el primer medio ciclo]
+La gu\'ia dice que la distancia 3 ya est\'a resuelta porque ``el banco de registros del curso escribe en
+el primer medio ciclo y lee en el segundo''. El \cod{register\_file.sv} del Taller~2, en cambio,
+escribe en el flanco de \emph{subida}. Sin tocar el m\'odulo, se le conecta el reloj invertido
+(\cod{.clk(\textasciitilde clk)}): escribe en el flanco de bajada, a mitad del ciclo, y la lectura
+combinacional de ID ve el valor nuevo antes del siguiente flanco de subida. Se comprob\'o que hace
+falta: con el reloj sin invertir fallan \cod{completo.s}, \cod{doble.s} y \cod{lui\_jal.s}
+(mutante M12, secci\'on~\ref{sec:mutantes}). Otra alternativa v\'alida habr\'ia sido un desv\'io interno
+dentro del banco, pero exig\'ia modificar un m\'odulo entregado por el curso.
+\end{supuesto}
+
+% =====================================================================
+\section{Fase 2: la unidad de forwarding}
+% =====================================================================
+\begin{enunciado}
+Combinacional pura, vive en EX. Entradas: \cod{rs1E}, \cod{rs2E} (de ID/EX), \cod{rdM}, \cod{RegWriteM}
+(de EX/MEM), \cod{rdW}, \cod{RegWriteW} (de MEM/WB). Salidas: \cod{ForwardAE} y \cod{ForwardBE}, de dos
+bits: \cod{00} el banco, \cod{10} EX/MEM (distancia 1), \cod{01} MEM/WB (distancia 2). Regla: si el
+registro que voy a leer coincide con el que va a escribir una instrucci\'on que llevo delante, tomo su
+valor de donde est\'e; y si coinciden las dos, me quedo con la m\'as cercana.
+\end{enunciado}
+
+\subsection{La l\'ogica}
+Se escribe una vez para cada operando: la gu\'ia advierte que implementar solo \cod{ForwardAE} es el
+error m\'as frecuente, y es silencioso. Para el operando A:
+\[
+\mathit{ForwardAE} =
+\begin{cases}
+10 & \text{si } \mathit{rs1E}\neq 0 \;\wedge\; \mathit{RegWriteM} \;\wedge\; \mathit{rs1E} = \mathit{rdM}\\[2pt]
+01 & \text{si no, y } \mathit{rs1E}\neq 0 \;\wedge\; \mathit{RegWriteW} \;\wedge\; \mathit{rs1E} = \mathit{rdW}\\[2pt]
+00 & \text{en otro caso}
+\end{cases}
+\]
+y $\mathit{ForwardBE}$ es la misma expresi\'on con $\mathit{rs2E}$. Los tres detalles de la
+secci\'on~7 est\'an en cada rama:
+\begin{enumerate}
+\item \textbf{$\mathit{rs}\neq 0$.} El \cod{nop} can\'onico (\cod{addi x0, x0, 0}) tiene \cod{rd = x0}.
+  Sin esta condici\'on, el resultado que se tira a \cod{x0} se adelanta y \cod{x0} deja de valer cero.
+\item \textbf{\cod{RegWrite}.} En un \cod{sw} o un \cod{beq}, los bits 11:7 son del inmediato. Por
+  ejemplo, \cod{sw x10, 8(x0)} tiene $\mathit{instr}[11{:}7] = 01000_2 = 8$: sin mirar \cod{RegWrite},
+  se anunciar\'ia como una escritura a \cod{x8} y adelantar\'ia la direcci\'on (8).
+\item \textbf{El orden es la prioridad.} EX/MEM se pregunta primero porque lleva el valor m\'as
+  reciente (doble hazard, tabla~\ref{tab:traza_doble}).
+\end{enumerate}
+
+\subsection{Qu\'e valor se adelanta: el mux de \cod{ResultSrc} en EX}
+Adelantar el resultado de la ALU no basta: \cod{jal}/\cod{jalr} escriben $PC+4$ y \cod{lui} escribe
+el inmediato, valores que nunca pasan por la ALU. Por eso se a\~nadi\'o en EX una copia del mux de
+\cod{ResultSrc} (\cod{mux\_res\_ex}) para los tres casos que ya tienen su valor en esa etapa:
+
+\begin{center}\small
+\begin{tabular}{@{}c l l@{}}
+\toprule
+\cod{ResultSrcE} & instrucciones & lo que entra a EX/MEM como resultado \\
+\midrule
+00 & \cod{add}, \cod{addi}, \cod{auipc}, \ldots & \cod{ALUResultE} \\
+01 & cargas & \cod{ALUResultE} (la \emph{direcci\'on}: el dato a\'un no existe) \\
+10 & \cod{jal}, \cod{jalr} & \cod{PCPlus4E} \\
+11 & \cod{lui} & \cod{ImmExtE} \\
+\bottomrule
+\end{tabular}
+\end{center}
+As\'i, \cod{ALUResultM} es siempre el valor definitivo de \cod{rd}, salvo en las cargas, que es
+justamente el caso que obliga a parar (fase~3). El mux de WB sigue eligiendo el dato le\'ido cuando
+\cod{ResultSrcW = 01}.
+
+Las entradas de los dos multiplexores de tres v\'ias (un \cod{mux4} con la rama \cod{11} sin usar) son
+\cod{RD1E}/\cod{RD2E}, \cod{ResultW} y \cod{ALUResultM}. La salida del mux B es tambi\'en el dato que
+escribe un \emph{store}: un \cod{sw} que guarda un registro reci\'en calculado necesita el valor
+adelantado, no el que ley\'o el banco (mutante M13).
+
+\begin{lstlisting}[language=SV,title={\small\ttfamily rtl/forwarding\_unit.sv}]
+module forwarding_unit (
+    input  logic [4:0] rs1E,
+    input  logic [4:0] rs2E,
+    input  logic [4:0] rdM,
+    input  logic [4:0] rdW,
+    input  logic       RegWriteM,
+    input  logic       RegWriteW,
+    output logic [1:0] ForwardAE,
+    output logic [1:0] ForwardBE
+);
+
+    always_comb begin
+        // ---- Operando A ----
+        if      ((rs1E != 5'd0) && RegWriteM && (rs1E == rdM)) ForwardAE = 2'b10;
+        else if ((rs1E != 5'd0) && RegWriteW && (rs1E == rdW)) ForwardAE = 2'b01;
+        else                                                   ForwardAE = 2'b00;
+
+        // ---- Operando B: la misma tabla con rs2E ----
+        if      ((rs2E != 5'd0) && RegWriteM && (rs2E == rdM)) ForwardBE = 2'b10;
+        else if ((rs2E != 5'd0) && RegWriteW && (rs2E == rdW)) ForwardBE = 2'b01;
+        else                                                   ForwardBE = 2'b00;
+    end
+
+endmodule
+\end{lstlisting}
+
+
+\subsection{La tabla de la secci\'on 6, comprobada}
+La tabla de la gu\'ia es la especificaci\'on. \cod{tb\_unidades} la aplica fila por fila, primero al
+operando A y despu\'es al B, y comprueba en cada caso que el otro operando se queda en \cod{00}. Se
+a\~nadieron dos filas extra.
+
+\begin{table}[!htbp]
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}c c c c c c l c@{}}
+\toprule
+\textbf{rsE} & \textbf{rdM} & \textbf{RegWriteM} & \textbf{rdW} & \textbf{RegWriteW} & \textbf{Salida} &
+\textbf{Situaci\'on} & \textbf{A y B} \\
+\midrule
+5  & 7  & 1 & 8 & 1 & 00 & nadie escribe ese registro & \checkmark \\
+5  & 5  & 1 & 8 & 1 & 10 & la de delante escribe \cod{x5} & \checkmark \\
+5  & 7  & 1 & 5 & 1 & 01 & la de dos por delante escribe \cod{x5} & \checkmark \\
+5  & 5  & 1 & 5 & 1 & 10 & las dos: gana la m\'as cercana & \checkmark \\
+5  & 5  & 0 & 8 & 1 & 00 & coincide, pero no escribe (un \cod{sw}) & \checkmark \\
+5  & 7  & 1 & 5 & 0 & 00 & coincide, pero no escribe (un branch) & \checkmark \\
+0  & 0  & 1 & 0 & 1 & 00 & el operando es \cod{x0}: nunca & \checkmark \\
+31 & 31 & 1 & 8 & 1 & 10 & \cod{x31}: se comparan los cinco bits & \checkmark \\
+\midrule
+5  & 5  & 0 & 5 & 1 & 01 & \emph{extra:} la cercana no escribe, la lejana s\'i & \checkmark \\
+0  & 7  & 1 & 0 & 1 & 00 & \emph{extra:} \cod{x0} solo en MEM/WB & \checkmark \\
+\bottomrule
+\end{tabular}
+\caption{Comportamiento de la unidad de forwarding (40 comprobaciones en \cod{tb\_unidades}).}
+\end{table}
+
+\begin{table}[!htbp]
+\centering\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\begin{tabular}{@{}lcccccccccccc@{}}
+\toprule
+\textbf{Instrucci\'on} & \textbf{c1} & \textbf{c2} & \textbf{c3} & \textbf{c4} & \textbf{c5} & \textbf{c6} & \textbf{c7} & \textbf{c8} & \textbf{c9} & \textbf{c10} & \textbf{c11} & \textbf{c12} \\
+\midrule
+\texttt{addi x1, x0, 1} & IF & ID & EX & MEM & WB &  &  &  &  &  &  &  \\
+\texttt{addi x2, x0, 2} &  & IF & ID & EX & MEM & WB &  &  &  &  &  &  \\
+\texttt{addi x3, x0, 30} &  &  & IF & ID & EX & MEM & WB &  &  &  &  &  \\
+\texttt{addi x4, x0, 40} &  &  &  & IF & ID & EX & MEM & WB &  &  &  &  \\
+\texttt{add x5, x1, x2} &  &  &  &  & IF & ID & EX & MEM & WB &  &  &  \\
+\texttt{add x5, x3, x4} &  &  &  &  &  & IF & ID & EX & MEM & WB &  &  \\
+\texttt{add x6, x5, x1} &  &  &  &  &  &  & IF & ID & EX & MEM & WB &  \\
+\texttt{add x7, x1, x2} &  &  &  &  &  &  &  & IF & ID & EX & MEM & WB \\
+\bottomrule
+\end{tabular}
+\caption{Traza real de \cod{doble.s} (doble hazard).}
+\label{tab:traza_doble}
+\end{table}
+
+La tabla~\ref{tab:traza_doble} es la traza real de \cod{doble.s}. En el ciclo~c8, \cod{add x6, x5, x1}
+est\'a en EX, el segundo \cod{add x5} en MEM y el primero en WB. Las dos condiciones se cumplen y gana
+EX/MEM: $\mathit{x6} = 70 + 1 = 71$. Con la prioridad invertida saldr\'ia $3 + 1 = 4$, un valor
+plausible y equivocado.
+
+% =====================================================================
+\section{Fase 3: la unidad de detecci\'on de riesgos}
+% =====================================================================
+\begin{enunciado}
+Combinacional pura, vive en ID. Entradas: \cod{rs1D}, \cod{rs2D} (de IF/ID), \cod{rdE},
+\cod{ResultSrcE} (de ID/EX) y \cod{PCSrcE} (de EX). Salidas: \cod{StallF} (habilitaci\'on del PC),
+\cod{StallD} (habilitaci\'on de IF/ID), \cod{FlushD} (borrado de IF/ID) y \cod{FlushE} (borrado de
+ID/EX). Dos trabajos: el \emph{load-use} y el salto tomado.
+\end{enunciado}
+
+\subsection{El load-use: la condici\'on completa}
+El \'unico caso que el forwarding no resuelve es una carga seguida del uso de su \cod{rd}: el dato sale
+de la memoria al final del mismo ciclo en el que la ALU lo necesita al principio. La soluci\'on es
+retrasar un ciclo a la instrucci\'on dependiente; as\'i queda a distancia~2 y la cubre el camino
+\cod{01} desde MEM/WB.
+\[
+\boxed{\;\mathit{lwStall} = (\mathit{ResultSrcE} = 01) \wedge \bigl((\mathit{rs1D} = \mathit{rdE})
+\vee (\mathit{rs2D} = \mathit{rdE})\bigr)\;}
+\]
+\[
+\boxed{\;\mathit{StallF} = \mathit{StallD} = \mathit{lwStall},\qquad
+\mathit{FlushD} = \mathit{PCSrcE},\qquad
+\mathit{FlushE} = \mathit{lwStall} \vee \mathit{PCSrcE}\;}
+\]
+\textbf{Por qu\'e se comparan los dos bits de \cod{ResultSrcE}.} Harris \& Harris comprueban solo el
+bit~0 porque en su dise\~no \cod{ResultSrc} nunca vale \cod{11}. En este curso \cod{11} es el
+inmediato de \cod{lui}, y \cod{11} tiene el bit~0 a uno: con la versi\'on del libro, un \cod{lui}
+seguido del uso de su \cod{rd} provocar\'ia una parada innecesaria. Ning\'un programa lo delata, porque
+una parada de m\'as no cambia el resultado. Solo lo detecta la prueba unitaria (mutante M11).
+
+\textbf{Por qu\'e vive en ID y no en EX.} Cuando la dependiente llega a EX ya est\'a calculando con sus
+operandos elegidos. Para no ejecutarla hay que detenerla antes, mientras est\'a en ID: la unidad de
+forwarding corrige lo que ya va a pasar; la de riesgos impide que pase.
+
+\textbf{Por qu\'e las tres se\~nales van juntas.} Si se para sin vaciar ID/EX, la copia que ya entr\'o a
+EX se ejecuta y despu\'es se ejecuta la original: la instrucci\'on corre dos veces (mutante M7). Si se
+vac\'ia ID/EX sin parar, IF/ID avanza y la instrucci\'on que estaba en ID se pierde (mutante M8).
+
+\begin{lstlisting}[language=SV,title={\small\ttfamily rtl/hazard\_unit.sv}]
+module hazard_unit (
+    input  logic [4:0] rs1D,
+    input  logic [4:0] rs2D,
+    input  logic [4:0] rdE,
+    input  logic [1:0] ResultSrcE,
+    input  logic       PCSrcE,
+    output logic       StallF,
+    output logic       StallD,
+    output logic       FlushD,
+    output logic       FlushE
+);
+
+    import riscv_pkg::*;
+
+    logic lwStall;
+
+    assign lwStall = (ResultSrcE == RES_MEM) && ((rs1D == rdE) || (rs2D == rdE));
+
+    assign StallF = lwStall;
+    assign StallD = lwStall;
+    assign FlushD = PCSrcE;
+    assign FlushE = lwStall | PCSrcE;
+
+endmodule
+\end{lstlisting}
+
+
+\begin{table}[!htbp]
+\centering\footnotesize\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}c c c c c c c c l@{}}
+\toprule
+\textbf{rs1D} & \textbf{rs2D} & \textbf{rdE} & \textbf{ResultSrcE} & \textbf{PCSrcE} &
+\textbf{Stall F/D} & \textbf{FlushD} & \textbf{FlushE} & \textbf{Situaci\'on} \\
+\midrule
+5 & 6 & 7 & 00 & 0 & 0 & 0 & 0 & nada que detectar \\
+5 & 6 & 5 & 00 & 0 & 0 & 0 & 0 & depende de un \cod{add}: forwarding \\
+5 & 6 & 5 & 01 & 0 & 1 & 0 & 1 & load-use por \cod{rs1} \\
+5 & 6 & 6 & 01 & 0 & 1 & 0 & 1 & load-use por \cod{rs2} \\
+5 & 6 & 7 & 01 & 0 & 0 & 0 & 0 & un \cod{lw}, pero a otro registro \\
+5 & 6 & 5 & 10 & 0 & 0 & 0 & 0 & \cod{jal}: su $PC+4$ ya existe \\
+5 & 6 & 5 & 11 & 0 & 0 & 0 & 0 & \cod{lui}: mirar solo el bit 0 parar\'ia de m\'as \\
+5 & 6 & 7 & 00 & 1 & 0 & 1 & 1 & salto tomado \\
+\bottomrule
+\end{tabular}
+\caption{Tabla de la secci\'on 12, verificada fila por fila (32 comprobaciones en \cod{tb\_unidades}).}
+\end{table}
+
+\begin{table}[!htbp]
+\centering\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\begin{tabular}{@{}lcccccccccccccccc@{}}
+\toprule
+\textbf{Instrucci\'on} & \textbf{c1} & \textbf{c2} & \textbf{c3} & \textbf{c4} & \textbf{c5} & \textbf{c6} & \textbf{c7} & \textbf{c8} & \textbf{c9} & \textbf{c10} & \textbf{c11} & \textbf{c12} & \textbf{c13} & \textbf{c14} & \textbf{c15} & \textbf{c16} \\
+\midrule
+\texttt{addi x1, x0, 21} & IF & ID & EX & MEM & WB &  &  &  &  &  &  &  &  &  &  &  \\
+\texttt{sw x1, 16(x0)} &  & IF & ID & EX & MEM & WB &  &  &  &  &  &  &  &  &  &  \\
+\texttt{addi x2, x0, 4} &  &  & IF & ID & EX & MEM & WB &  &  &  &  &  &  &  &  &  \\
+\texttt{sw x2, 20(x0)} &  &  &  & IF & ID & EX & MEM & WB &  &  &  &  &  &  &  &  \\
+\texttt{lw x3, 16(x0)} &  &  &  &  & IF & ID & EX & MEM & WB &  &  &  &  &  &  &  \\
+\texttt{add x4, x3, x0} &  &  &  &  &  & IF & ID & \textcolor{control}{\textbf{--}} & EX & MEM & WB &  &  &  &  &  \\
+\texttt{lw x5, 20(x0)} &  &  &  &  &  &  & IF & \textcolor{control}{\textbf{--}} & ID & EX & MEM & WB &  &  &  &  \\
+\texttt{add x6, x0, x5} &  &  &  &  &  &  &  &  & IF & ID & \textcolor{control}{\textbf{--}} & EX & MEM & WB &  &  \\
+\texttt{lw x7, 16(x0)} &  &  &  &  &  &  &  &  &  & IF & \textcolor{control}{\textbf{--}} & ID & EX & MEM & WB &  \\
+\texttt{addi x9, x0, 1} &  &  &  &  &  &  &  &  &  &  &  & IF & ID & EX & MEM & WB \\
+\texttt{add x8, x7, x7} &  &  &  &  &  &  &  &  &  &  &  &  & IF & ID & EX & MEM \\
+\texttt{lw x12, 16(x0)} &  &  &  &  &  &  &  &  &  &  &  &  &  & IF & ID & EX \\
+\bottomrule
+\end{tabular}
+\caption{Traza real de \cod{lw\_use.s}: tres paradas de un ciclo.}
+\label{tab:traza_lw}
+\end{table}
+
+La tabla~\ref{tab:traza_lw} es la traza real de \cod{lw\_use.s} (las marcas \textcolor{control}{\textbf{--}}
+son los ciclos perdidos). Coincide con la de la secci\'on~10 de la gu\'ia: el \cod{add x4, x3, x0}
+se queda en ID un ciclo, y la instrucci\'on de detr\'as (\cod{lw x5}) tambi\'en se queda quieta en IF,
+porque se congela el frente entero. En cambio, \cod{lw x7}, seguido de \cod{addi x9} (independiente)
+y de \cod{add x8, x7, x7}, no para: la distancia ya es~2. En total, el programa tiene exactamente 3
+paradas, y el testbench lo exige.
+
+\subsection{El salto tomado}
+La condici\'on se resuelve en EX. Para entonces, las dos instrucciones de detr\'as ya entraron;
+\cod{FlushD} vac\'ia IF/ID y \cod{FlushE} vac\'ia ID/EX. Las dos causas de \cod{FlushE} no pueden
+coincidir: una exige una carga en EX y la otra un salto en EX.
+
+\begin{table}[!htbp]
+\centering\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\begin{tabular}{@{}lcccccccccccc@{}}
+\toprule
+\textbf{Instrucci\'on} & \textbf{c1} & \textbf{c2} & \textbf{c3} & \textbf{c4} & \textbf{c5} & \textbf{c6} & \textbf{c7} & \textbf{c8} & \textbf{c9} & \textbf{c10} & \textbf{c11} & \textbf{c12} \\
+\midrule
+\texttt{addi x1, x0, 3} & IF & ID & EX & MEM & WB &  &  &  &  &  &  &  \\
+\texttt{addi x2, x0, 3} &  & IF & ID & EX & MEM & WB &  &  &  &  &  &  \\
+\texttt{add x3, x1, x0} &  &  & IF & ID & EX & MEM & WB &  &  &  &  &  \\
+\texttt{beq x3, x2, destino} &  &  &  & IF & ID & EX & MEM & WB &  &  &  &  \\
+\textcolor{control}{\texttt{addi x30, x0, 99}\ (borrada)} &  &  &  &  & IF & ID &  &  &  &  &  &  \\
+\textcolor{control}{\texttt{sw x1, 0(x0)}\ (borrada)} &  &  &  &  &  & IF &  &  &  &  &  &  \\
+\texttt{addi x4, x0, 7} &  &  &  &  &  &  & IF & ID & EX & MEM & WB &  \\
+\texttt{jal x0, sig} &  &  &  &  &  &  &  & IF & ID & EX & MEM & WB \\
+\textcolor{control}{\texttt{addi x31, x0, 99}\ (borrada)} &  &  &  &  &  &  &  &  & IF & ID &  &  \\
+\textcolor{control}{\texttt{sw x1, 4(x0)}\ (borrada)} &  &  &  &  &  &  &  &  &  & IF &  &  \\
+\bottomrule
+\end{tabular}
+\caption{Traza real de \cod{salto.s}: dos saltos tomados, cuatro instrucciones borradas.}
+\label{tab:traza_salto}
+\end{table}
+
+En la tabla~\ref{tab:traza_salto}, el \cod{beq} est\'a en EX en el ciclo~c6 y salta: \cod{addi x30} y
+\cod{sw x1, 0(x0)} desaparecen sin escribir nada, y en c7 entra la instrucci\'on del destino. Lo mismo
+pasa con \cod{jal}. La penalizaci\'on es de 2 ciclos por salto tomado.
+
+% =====================================================================
+\section{Fase 4: el procesador segmentado}
+% =====================================================================
+
+\begin{figure}[!htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  >=Stealth, font=\footnotesize,
+  caja/.style={draw, thick, rounded corners=2pt, align=center, fill=white},
+  dada/.style={caja, fill=black!7},
+  nueva/.style={caja, draw=nuevo, fill=orange!8, very thick},
+  preg/.style={draw, thick, fill=black!18, minimum width=0.38cm, minimum height=7.2cm},
+  mux/.style={draw, thick, trapezium, trapezium angle=70, shape border rotate=270,
+              minimum width=1.25cm, minimum height=0.5cm, inner sep=1pt, fill=white},
+  d/.style={->, thick, datos},
+  n/.style={->, thick, nuevo},
+  c/.style={->, control, thick},
+  et/.style={font=\tiny, datos},
+  ec/.style={font=\tiny, control},
+]
+% registros de segmentacion
+\node[preg] (r1) at (2.8,0.6) {};  \node[font=\tiny, above] at (r1.north) {IF/ID};
+\node[preg] (r2) at (7.6,0.6) {};  \node[font=\tiny, above] at (r2.north) {ID/EX};
+\node[preg] (r3) at (13.0,0.6) {}; \node[font=\tiny, above] at (r3.north) {EX/MEM};
+\node[preg] (r4) at (16.4,0.6) {}; \node[font=\tiny, above] at (r4.north) {MEM/WB};
+% etapas
+\foreach \x/\t in {0.9/IF, 5.2/ID, 10.3/EX, 14.7/MEM, 17.6/WB}
+  \node[font=\small\bfseries] at (\x,4.9) {\t};
+% IF
+\node[dada, minimum width=0.9cm, minimum height=1.2cm] (pc) at (0,0.6) {PC};
+\node[dada, minimum width=1.2cm, minimum height=1.6cm] (im) at (1.6,0.6) {Mem.\\instr.};
+\draw[d] (pc.east) -- (im.west);
+\draw[d] (im.east) -- (r1.west |- im.east);
+% ID
+\node[caja, draw=control, minimum width=1.9cm, minimum height=0.8cm] (cu) at (5.2,3.3) {Unidad de\\control};
+\node[dada, minimum width=1.9cm, minimum height=2.0cm] (rf) at (5.2,0.6) {Banco de\\registros};
+\node[caja, minimum width=1.9cm, minimum height=0.7cm] (ig) at (5.2,-1.4) {Gen. inmed.};
+\draw[d] (r1.east |- 0,0.6) -- (rf.west);
+\draw[d] (3.4,0.6) |- (cu.west);
+\draw[d] (3.4,0.6) |- (ig.west);
+\draw[d] (rf.east |- 0,1.1) -- node[et, above]{\cod{RD1}} (r2.west |- 0,1.1);
+\draw[d] (rf.east |- 0,0.1) -- node[et, above]{\cod{RD2}} (r2.west |- 0,0.1);
+\draw[d] (ig.east) -- (r2.west |- ig.east);
+\draw[->, control, dashed] (cu.east) -- (r2.west |- cu.east) node[pos=0.5, above, ec]{control};
+% EX
+\node[mux, draw=nuevo] (fa) at (8.6,1.4) {};
+\node[mux, draw=nuevo] (fb) at (8.6,-0.2) {};
+\node[mux] (sa) at (9.9,1.4) {};
+\node[mux] (sb) at (9.9,-0.2) {};
+\node[dada, minimum width=1.0cm, minimum height=2.4cm] (alu) at (11.3,0.6) {ALU};
+\node[caja, minimum width=1.0cm, minimum height=0.6cm, draw=nuevo] (mre) at (12.15,-1.8) {\tiny mux\\[-2pt]\tiny ResSrc};
+\draw[d] (r2.east |- 0,1.65) -- ($(fa.west)+(0,0.25)$);
+\draw[d] (r2.east |- 0,0.05) -- ($(fb.west)+(0,0.25)$);
+\draw[d] (fa.east) -- (sa.west |- fa.east);
+\draw[d] (fb.east) -- (sb.west |- fb.east);
+\draw[d] (sa.east) -- (alu.west |- sa.east);
+\draw[d] (sb.east) -- (alu.west |- sb.east);
+\draw[d] (alu.east) -- (12.15,0.6) -- (mre.north);
+\draw[d] (mre.east) -- ++(0.3,0) |- (r3.west |- 0,-1.0) ;
+\node[ec] at (8.6,2.2) {ForwardAE};
+\node[ec, right] at (8.95,-0.95) {ForwardBE};
+% MEM
+\node[caja, minimum width=1.6cm, minimum height=2.0cm] (dm) at (14.7,0.6) {Memoria\\de datos};
+\draw[d] (r3.east |- 0,0.6) -- (dm.west);
+\draw[d] (dm.east) -- (r4.west |- dm.east);
+% WB
+\node[mux] (mr) at (17.4,0.6) {};
+\draw[d] (r4.east |- 0,0.6) -- (mr.west);
+% caminos de vuelta (forwarding)
+\draw[n] (13.35,-1.0) -- (13.6,-1.0) -- (13.6,-2.55) -- (8.25,-2.55) -- (8.25,-0.45) -- ($(fb.west)+(0,-0.25)$);
+\draw[n] (8.25,-2.55) -- (8.05,-2.55) -- (8.05,1.15) -- ($(fa.west)+(0,-0.25)$);
+\node[font=\tiny, nuevo, below] at (11.0,-2.55) {\cod{ALUResultM} $\cdot$ de EX/MEM};
+\draw[n] (mr.east) -- (18.1,0.6) -- (18.1,-3.15) -- (7.9,-3.15) -- (7.9,1.4);
+\draw[n] (7.9,1.4) -- ($(fa.west)+(0,0)$);
+\draw[n] (7.9,-0.2) -- ($(fb.west)+(0,0)$);
+\fill[nuevo] (7.9,-0.2) circle (1.3pt);
+\node[font=\tiny, nuevo, below] at (15.4,-3.15) {\cod{ResultW} $\cdot$ de MEM/WB (tambi\'en vuelve al banco)};
+% unidades nuevas
+\node[nueva, minimum width=3.6cm, minimum height=0.9cm] (hu) at (3.4,-4.4) {Unidad de detecci\'on de riesgos\\\tiny vive en ID};
+\node[nueva, minimum width=3.6cm, minimum height=0.9cm] (fu) at (10.3,-4.4) {Unidad de forwarding\\\tiny vive en EX};
+\node[ec, below] at (3.4,-4.95) {entradas: rs1D rs2D rdE ResultSrcE PCSrcE};
+\node[ec, below] at (10.3,-4.95) {entradas: rs1E rs2E rdM rdW RegWriteM RegWriteW};
+\draw[c] (hu.west) -| (pc.south) node[pos=0.75, left, ec]{StallF};
+\draw[c] ($(hu.north)+(-0.6,0)$) -- (2.8,-3.0) node[pos=0.5, left, ec]{StallD, FlushD} -- (r1.south);
+\draw[c] ($(hu.north)+(0.8,0)$) |- (7.6,-3.7) node[pos=0.75, below, ec]{FlushE} -- (r2.south);
+\draw[c] ($(fu.north)+(-1.4,0)$) -- (8.9,-3.6) -- (8.9,-3.6);
+\draw[c] (8.9,-3.6) -- (8.9,-3.4) -| (fb.south);
+\node[ec, right] at (8.9,-3.45) {Forward A/B};
+% salto
+\draw[d] (alu.north) -- ++(0,0.9) node[et, above]{\cod{PCTargetE}, \cod{PCSrcE} $\to$ IF};
+\end{tikzpicture}}
+\caption{El procesador segmentado: cuatro registros de segmentaci\'on, la unidad de riesgos en ID y la
+de forwarding en EX. En naranja, lo que a\~nade este taller: las dos unidades, los dos multiplexores de
+tres entradas, la copia del mux de \cod{ResultSrc} en EX y los dos caminos de vuelta.}
+\label{fig:pipeline}
+\end{figure}
+
+Aparte de las dos cajas nuevas, no cambi\'o nada respecto al monociclo: los mismos sumadores, el mismo
+banco, las mismas dos memorias, la misma unidad de control y la misma ALU. Se a\~nadieron los cuatro
+registros, dos bloques combinacionales, dos multiplexores de tres entradas, la copia del mux de
+\cod{ResultSrc} en EX y los cables. Las se\~nales de parada y borrado llegan a estos puertos:
+
+\begin{center}\small
+\begin{tabular}{@{}l l l@{}}
+\toprule
+\textbf{Se\~nal} & \textbf{Puerto} & \textbf{Efecto} \\
+\midrule
+\sig{StallF} & \cod{registro\_pc.en = en \& \textasciitilde StallF} & el PC no avanza: se vuelve a buscar la misma instrucci\'on \\
+\sig{StallD} & \cod{reg\_if\_id.en = en \& \textasciitilde StallD} & la dependiente se queda en ID \\
+\sig{FlushD} & \cod{reg\_if\_id.clr} & mata la instrucci\'on que ven\'ia en IF \\
+\sig{FlushE} & \cod{reg\_id\_ex.clr} & mete una burbuja en EX \\
+\sig{ForwardAE} & \cod{mux\_fwd\_a.sel} & elige \cod{RD1E} / \cod{ResultW} / \cod{ALUResultM} \\
+\sig{ForwardBE} & \cod{mux\_fwd\_b.sel} & elige \cod{RD2E} / \cod{ResultW} / \cod{ALUResultM} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}[language=SV,title={\small\ttfamily rtl/riscv\_segmentado.sv}]
+module riscv_segmentado #(
+    parameter int IMEM_DEPTH = 256,
+    parameter int DMEM_DEPTH = 256,
+    parameter     INIT_FILE  = ""
+)(
+    input logic clk,
+    input logic rst,
+    input logic en
+);
+
+    import riscv_pkg::*;
+
+    // =========================================================================
+    // Senales de las dos unidades nuevas
+    // =========================================================================
+    logic       StallF, StallD, FlushD, FlushE;
+    logic [1:0] ForwardAE, ForwardBE;
+
+    // =========================================================================
+    // IF - busqueda
+    // =========================================================================
+    logic [31:0] PCF, PCPlus4F, PCNextF, InstrF;
+    logic [31:0] PCTargetE;          // vuelve desde EX
+    logic        PCSrcE;             // vuelve desde EX
+
+    pc registro_pc (
+        .clk     (clk),
+        .rst     (rst),
+        .en      (en & ~StallF),
+        .pc_next (PCNextF),
+        .pc      (PCF)
+    );
+
+    adder add_pc4 (
+        .a (PCF),
+        .b (32'd4),
+        .y (PCPlus4F)
+    );
+
+    instruction_memory #(
+        .DEPTH     (IMEM_DEPTH),
+        .INIT_FILE (INIT_FILE)
+    ) imem (
+        .addr  (PCF),
+        .instr (InstrF)
+    );
+
+    mux2 #(.W(32)) mux_pc (
+        .d0  (PCPlus4F),
+        .d1  (PCTargetE),
+        .sel (PCSrcE),
+        .y   (PCNextF)
+    );
+
+    // =========================================================================
+    // IF/ID: la instruccion, el PC y PC+4                         (96 bits)
+    // =========================================================================
+    logic [31:0] InstrD, PCD, PCPlus4D;
+
+    pipe_reg #(.W(96)) reg_if_id (
+        .clk (clk),
+        .rst (rst),
+        .en  (en & ~StallD),
+        .clr (FlushD),
+        .d   ({InstrF, PCF, PCPlus4F}),
+        .q   ({InstrD, PCD, PCPlus4D})
+    );
+
+    // =========================================================================
+    // ID - decodificacion y lectura del banco
+    // =========================================================================
+    logic [6:0]  opcodeD;
+    logic [2:0]  funct3D;
+    logic        funct7b5D;
+    logic [4:0]  rs1D, rs2D, rdD;
+
+    assign opcodeD   = InstrD[6:0];
+    assign rdD       = InstrD[11:7];
+    assign funct3D   = InstrD[14:12];
+    assign rs1D      = InstrD[19:15];
+    assign rs2D      = InstrD[24:20];
+    assign funct7b5D = InstrD[30];
+
+    logic        RegWriteD, ALUSrcAD, ALUSrcBD, MemWriteD;
+    logic        BranchD, JumpD, JalrD;
+    logic [2:0]  ImmSrcD;
+    logic [1:0]  ResultSrcD;
+    logic [3:0]  ALUControlD;
+    logic [31:0] RD1D, RD2D, ImmExtD;
+
+    // Lo que se escribe en el banco, desde WB
+    logic [31:0] ResultW;
+    logic [4:0]  rdW;
+    logic        RegWriteW;
+
+    // La unidad de control es la del Taller 2, sin cambios. En ID solo se usan
+    // sus senales "estaticas"; las banderas todavia no existen (se calculan en
+    // EX), asi que entran a cero y su pc_src no se usa: el salto se decide en EX.
+    control_unit control (
+        .opcode      (opcodeD),
+        .funct3      (funct3D),
+        .funct7b5    (funct7b5D),
+        .zero        (1'b0),
+        .less        (1'b0),
+        .less_u      (1'b0),
+        .reg_write   (RegWriteD),
+        .imm_src     (ImmSrcD),
+        .alu_src_a   (ALUSrcAD),
+        .alu_src_b   (ALUSrcBD),
+        .mem_write   (MemWriteD),
+        .result_src  (ResultSrcD),
+        .branch      (BranchD),
+        .jump        (JumpD),
+        .jalr        (JalrD),
+        .alu_control (ALUControlD),
+        .pc_src      ()
+    );
+
+    // El banco escribe en el flanco de BAJADA (primer medio ciclo) y se lee
+    // combinacionalmente despues: una escritura en WB y una lectura en ID del
+    // mismo ciclo ya entregan el valor nuevo. Asi se resuelve la distancia 3
+    // sin tocar register_file.sv: solo se le conecta el reloj invertido.
+    register_file rf (
+        .clk (~clk),
+        .we  (RegWriteW),
+        .rs1 (rs1D),
+        .rs2 (rs2D),
+        .rd  (rdW),
+        .wd3 (ResultW),
+        .rd1 (RD1D),
+        .rd2 (RD2D)
+    );
+
+    imm_gen ig (
+        .instr   (InstrD),
+        .imm_src (ImmSrcD),
+        .imm_ext (ImmExtD)
+    );
+
+    // Unidad de deteccion de riesgos: mira IF/ID (rs1D, rs2D) e ID/EX (rdE,
+    // ResultSrcE). Vive en ID porque hay que detener la instruccion ANTES de
+    // que llegue a EX.
+    logic [4:0] rdE;
+    logic [1:0] ResultSrcE;
+
+    hazard_unit hu (
+        .rs1D       (rs1D),
+        .rs2D       (rs2D),
+        .rdE        (rdE),
+        .ResultSrcE (ResultSrcE),
+        .PCSrcE     (PCSrcE),
+        .StallF     (StallF),
+        .StallD     (StallD),
+        .FlushD     (FlushD),
+        .FlushE     (FlushE)
+    );
+
+    // =========================================================================
+    // ID/EX                                                       (191 bits)
+    //   datos:   RD1, RD2, PC, PC+4, ImmExt                        5 x 32
+    //   numeros: rs1, rs2, rd                                      3 x 5
+    //   funct3                                                     3
+    //   control: RegWrite, ResultSrc(2), MemWrite, Jump, Branch,
+    //            Jalr, ALUControl(4), ALUSrcA, ALUSrcB             13
+    // rs1 y rs2 viajan hasta EX: la unidad de forwarding compara NUMEROS.
+    // funct3 viaja porque el salto se decide en EX y la memoria lo usa en MEM.
+    // =========================================================================
+    logic [31:0] RD1E, RD2E, PCE, PCPlus4E, ImmExtE;
+    logic [4:0]  rs1E, rs2E;
+    logic [2:0]  funct3E;
+    logic        RegWriteE, MemWriteE, JumpE, BranchE, JalrE;
+    logic        ALUSrcAE, ALUSrcBE;
+    logic [3:0]  ALUControlE;
+
+    pipe_reg #(.W(191)) reg_id_ex (
+        .clk (clk),
+        .rst (rst),
+        .en  (en),
+        .clr (FlushE),
+        .d   ({RD1D, RD2D, PCD, PCPlus4D, ImmExtD,
+               rs1D, rs2D, rdD, funct3D,
+               RegWriteD, ResultSrcD, MemWriteD, JumpD, BranchD, JalrD,
+               ALUControlD, ALUSrcAD, ALUSrcBD}),
+        .q   ({RD1E, RD2E, PCE, PCPlus4E, ImmExtE,
+               rs1E, rs2E, rdE, funct3E,
+               RegWriteE, ResultSrcE, MemWriteE, JumpE, BranchE, JalrE,
+               ALUControlE, ALUSrcAE, ALUSrcBE})
+    );
+
+    // =========================================================================
+    // EX - ejecucion
+    // =========================================================================
+    logic [31:0] ALUResultM;         // vuelve desde EX/MEM (distancia 1)
+    logic [4:0]  rdM;
+    logic        RegWriteM;
+
+    forwarding_unit fu (
+        .rs1E      (rs1E),
+        .rs2E      (rs2E),
+        .rdM       (rdM),
+        .rdW       (rdW),
+        .RegWriteM (RegWriteM),
+        .RegWriteW (RegWriteW),
+        .ForwardAE (ForwardAE),
+        .ForwardBE (ForwardBE)
+    );
+
+    // Los dos multiplexores de tres entradas (mux4 con la rama 11 sin uso)
+    logic [31:0] FwdAE, WriteDataE;
+
+    mux4 #(.W(32)) mux_fwd_a (
+        .d00 (RD1E),
+        .d01 (ResultW),
+        .d10 (ALUResultM),
+        .d11 (32'd0),
+        .sel (ForwardAE),
+        .y   (FwdAE)
+    );
+
+    // La salida del mux B es tambien el dato que un store escribe en memoria:
+    // un sw que guarda un registro recien calculado necesita el valor bueno.
+    mux4 #(.W(32)) mux_fwd_b (
+        .d00 (RD2E),
+        .d01 (ResultW),
+        .d10 (ALUResultM),
+        .d11 (32'd0),
+        .sel (ForwardBE),
+        .y   (WriteDataE)
+    );
+
+    // Despues del forwarding, los mismos dos mux2 del monociclo
+    logic [31:0] SrcAE, SrcBE, ALUResultE;
+    logic        zeroE, lessE, less_uE;
+
+    mux2 #(.W(32)) mux_a (
+        .d0  (FwdAE),
+        .d1  (PCE),
+        .sel (ALUSrcAE),
+        .y   (SrcAE)
+    );
+
+    mux2 #(.W(32)) mux_b (
+        .d0  (WriteDataE),
+        .d1  (ImmExtE),
+        .sel (ALUSrcBE),
+        .y   (SrcBE)
+    );
+
+    alu alu_i (
+        .src_a       (SrcAE),
+        .src_b       (SrcBE),
+        .alu_control (ALUControlE),
+        .alu_result  (ALUResultE),
+        .zero        (zeroE),
+        .less        (lessE),
+        .less_u      (less_uE)
+    );
+
+    // Destino del salto: PC de ESTA instruccion + inmediato, o rs1+imm (jalr)
+    logic [31:0] PCPlusImmE;
+
+    adder add_tgt (
+        .a (PCE),
+        .b (ImmExtE),
+        .y (PCPlusImmE)
+    );
+
+    mux2 #(.W(32)) mux_jalr (
+        .d0  (PCPlusImmE),
+        .d1  ({ALUResultE[31:1], 1'b0}),
+        .sel (JalrE),
+        .y   (PCTargetE)
+    );
+
+    // Decision del salto en EX. Es exactamente el bloque 3 de control_unit,
+    // aplicado a la instruccion que esta en EX con las banderas de la ALU,
+    // que se calculan de los operandos YA adelantados.
+    logic BranchTakenE;
+
+    always_comb begin
+        BranchTakenE = 1'b0;
+        if (BranchE) begin
+            case (funct3E)
+                F3_BEQ : BranchTakenE =  zeroE;
+                F3_BNE : BranchTakenE = ~zeroE;
+                F3_BLT : BranchTakenE =  lessE;
+                F3_BGE : BranchTakenE = ~lessE;
+                F3_BLTU: BranchTakenE =  less_uE;
+                F3_BGEU: BranchTakenE = ~less_uE;
+                default: BranchTakenE = 1'b0;
+            endcase
+        end
+    end
+
+    assign PCSrcE = BranchTakenE | JumpE;
+
+    // El mux de ResultSrc, adelantado a EX para los tres casos que ya tienen
+    // su valor aqui (ALU, PC+4, ImmExt). Para un load (01) deja pasar la
+    // direccion, que es lo que necesita la memoria en MEM. Asi EX/MEM lleva
+    // siempre el valor definitivo de rd y el forwarding de un lui, un jal o
+    // un auipc no adelanta basura.
+    logic [31:0] ExResultE;
+
+    mux4 #(.W(32)) mux_res_ex (
+        .d00 (ALUResultE),
+        .d01 (ALUResultE),
+        .d10 (PCPlus4E),
+        .d11 (ImmExtE),
+        .sel (ResultSrcE),
+        .y   (ExResultE)
+    );
+
+    // =========================================================================
+    // EX/MEM                                                      (140 bits)
+    //   resultado (definitivo), dato a escribir, PC+4, destino del salto,
+    //   rd, funct3 y las senales de MEM y WB
+    // =========================================================================
+    logic [31:0] WriteDataM, PCPlus4M, PCTargetM;
+    logic [2:0]  funct3M;
+    logic [1:0]  ResultSrcM;
+    logic        MemWriteM;
+
+    pipe_reg #(.W(140)) reg_ex_mem (
+        .clk (clk),
+        .rst (rst),
+        .en  (en),
+        .clr (1'b0),
+        .d   ({ExResultE,  WriteDataE, PCPlus4E, PCTargetE,
+               rdE, funct3E, RegWriteE, ResultSrcE, MemWriteE}),
+        .q   ({ALUResultM, WriteDataM, PCPlus4M, PCTargetM,
+               rdM, funct3M, RegWriteM, ResultSrcM, MemWriteM})
+    );
+
+    // =========================================================================
+    // MEM - memoria de datos
+    // =========================================================================
+    logic [31:0] ReadDataM;
+
+    data_memory #(
+        .DEPTH (DMEM_DEPTH)
+    ) dmem (
+        .clk    (clk),
+        .we     (MemWriteM),
+        .funct3 (funct3M),
+        .addr   (ALUResultM),
+        .wd     (WriteDataM),
+        .rd     (ReadDataM)
+    );
+
+    // =========================================================================
+    // MEM/WB                                                      (104 bits)
+    //   dato leido, resultado, PC+4, rd y las senales de WB
+    // =========================================================================
+    logic [31:0] ReadDataW, ALUResultW, PCPlus4W;
+    logic [1:0]  ResultSrcW;
+
+    pipe_reg #(.W(104)) reg_mem_wb (
+        .clk (clk),
+        .rst (rst),
+        .en  (en),
+        .clr (1'b0),
+        .d   ({ReadDataM, ALUResultM, PCPlus4M, rdM, RegWriteM, ResultSrcM}),
+        .q   ({ReadDataW, ALUResultW, PCPlus4W, rdW, RegWriteW, ResultSrcW})
+    );
+
+    // =========================================================================
+    // WB - escritura en el banco
+    // =========================================================================
+    // Las ramas 10 y 11 ya vienen resueltas desde EX dentro de ALUResultW; se
+    // deja PC+4 en la 10 porque es el mismo valor y asi la tabla de ResultSrc
+    // se lee igual que en el monociclo.
+    mux4 #(.W(32)) mux_res (
+        .d00 (ALUResultW),
+        .d01 (ReadDataW),
+        .d10 (PCPlus4W),
+        .d11 (ALUResultW),
+        .sel (ResultSrcW),
+        .y   (ResultW)
+    );
+
+endmodule
+\end{lstlisting}
+
+
+% =====================================================================
+\section{C\'omo se supo que est\'a bien}
+% =====================================================================
+
+\subsection{Los programas dirigidos (secci\'on 19)}
+Un procesador segmentado mal construido pasa muchos programas; la prueba de humo del Taller~2 sigue en
+verde con la unidad de forwarding a medias. Por eso se escribi\'o un programa para cada situaci\'on
+de la secci\'on~19:
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}X l X@{}}
+\toprule
+\textbf{Hay que provocar} & \textbf{Programa} & \textbf{Qu\'e se comprueba} \\
+\midrule
+Distancia 1 y 2, por A y por B & \cod{fwd\_dist.s} & con \cod{sub}, para que el orden importe:
+  \cod{x3 = 4}, \cod{x4 = -1}, \cod{x6 = 1}, \cod{x7 = -1} \\
+Dos escrituras seguidas y una lectura & \cod{doble.s} & \cod{x6 = x8 = 71} (al rev\'es saldr\'ia 4) \\
+\cod{rd = x0} y lectura de \cod{x0} & \cod{x0.s} & \cod{x0 = 0}, \cod{x2 = 5}, \cod{x3 = 1}, \cod{x4 = 5} \\
+\cod{sw} con desplazamiento = registro le\'ido & \cod{sw\_rd.s} & \cod{sw x10, 8(x0)}, luego leer \cod{x8}:
+  \cod{x11 = 100} (no 8); tambi\'en con \cod{sw 12} y un \cod{bne} \\
+\cod{lui} y uso a distancia 1 & \cod{lui\_jal.s} & tambi\'en \cod{jal}, \cod{auipc} y \cod{jalr}:
+  \cod{x2 = 0x12345678}, \cod{x6 = 0x14} \\
+\cod{lw} y uso, por \cod{rs1} y por \cod{rs2} & \cod{lw\_use.s} & \cod{x4 = 21}, \cod{x6 = 4}, y
+  \emph{exactamente} 3 paradas \\
+\cod{lw}, independiente, uso & \cod{lw\_use.s} & \cod{x8 = 42} sin parada (la cuenta de 3 lo exige) \\
+Salto tomado con ranuras visibles & \cod{salto.s} & los seis condicionales tomados y no tomados, y
+  \cod{jal}: \cod{x28..x31 = 0}, \cod{Mem[0..1] = 0} \\
+\cod{lw} y uso con acumulador & \cod{acumulador.s} & \cod{x2 = 15}, \cod{x5 = 3}, \cod{Mem[5] = 15} \\
+\bottomrule
+\end{tabularx}
+\caption{Situaciones de la secci\'on 19 y el programa que las provoca.}
+\end{table}
+
+Adem\'as de los valores puntuales, cada programa debe dejar el \emph{mismo} estado que el monociclo
+(32 registros y 64 palabras). Resultado: \cod{tb\_unidades} \textbf{78/78} y \cod{tb\_pipeline}
+\textbf{75/75}. La regresi\'on del Taller 2 tambi\'en sigue pasando (\textbf{86/86}).
+
+\subsection{Defectos inyectados a prop\'osito}\label{sec:mutantes}
+Que todo pase no demuestra que las pruebas sirvan. Para comprobarlo, se introdujo cada defecto de la
+secci\'on~19 (uno a la vez, en una copia del repositorio) y se miró qu\'e prueba lo delata. Un defecto
+que no hace fallar nada revela un hueco en las pruebas.
+
+\begin{table}[!htbp]
+\centering\footnotesize
+\begin{tabularx}{\textwidth}{@{}l X c c X@{}}
+\toprule
+& \textbf{Defecto inyectado} & \textbf{Fallos unid.} & \textbf{Fallos sist.} & \textbf{Programas que lo delatan} \\
+\midrule
+M1 & Solo ForwardAE (ForwardBE siempre 00) & 5 & 36 & acumulador, bytes, completo, doble, fwd\_dist, humo, lui\_jal, lw\_use, salto, x0 \\
+M2 & Prioridad invertida (MEM/WB antes que EX/MEM) & 1 & 4 & completo, doble \\
+M3 & Sin la condicion rs $\neq$ x0 & 2 & 3 & x0 \\
+M4 & Sin la condicion RegWrite & 2 & 2 & sw\_rd \\
+M5 & EX/MEM solo lleva el resultado de la ALU & 0 & 8 & bytes, completo, lui\_jal \\
+M6 & Sin deteccion de load-use & 6 & 9 & acumulador, lw\_use \\
+M7 & Parar sin vaciar ID/EX & 2 & 3 & acumulador \\
+M8 & Vaciar ID/EX sin parar & 4 & 9 & acumulador, lw\_use \\
+M9 & Salto tomado sin FlushD & 1 & 7 & completo, salto \\
+M10 & Salto tomado sin FlushE & 1 & 8 & completo, lui\_jal, salto \\
+M11 & Comparar solo \cod{ResultSrcE[0]} (version del libro) & 3 & 0 & - \\
+M12 & Banco con el reloj sin invertir (escribe en subida) & 0 & 8 & completo, doble, lui\_jal \\
+M13 & Store con RD2E en vez del dato adelantado & 0 & 15 & acumulador, bytes, humo, lw\_use \\
+\bottomrule
+\end{tabularx}
+\caption{Cada defecto hace fallar al menos una prueba. M11 solo lo ve la prueba unitaria, como anticipa
+la gu\'ia; M5, M12 y M13 son de cableado y no tienen prueba unitaria.}
+\end{table}
+
+\subsection{Qu\'e sali\'o mal y c\'omo se encontr\'o}
+\textbf{1. La unidad de forwarding se quedaba ``congelada''.} La primera versi\'on calculaba cada
+salida con una funci\'on que recib\'ia solo \cod{rs} como argumento y le\'ia \cod{rdM} y
+\cod{RegWriteM} directamente del m\'odulo:
+\begin{lstlisting}[language=SV, numbers=none]
+function automatic logic [1:0] decidir(input logic [4:0] rsE);
+    if ((rsE != 5'd0) && RegWriteM && (rsE == rdM)) decidir = 2'b10; ...
+endfunction
+assign ForwardAE = decidir(rs1E);
+\end{lstlisting}
+En un \cod{assign}, el simulador solo vuelve a evaluar la funci\'on cuando cambian sus
+\emph{argumentos}. En el bucle de \cod{acumulador.s}, \cod{addi x3, x3, -1} va seguido de
+\cod{bne x3, x0, bucle}: \cod{rs1E} vale 3 en dos ciclos seguidos, as\'i que \cod{ForwardAE} se qued\'o
+en \cod{00}, el \cod{bne} compar\'o el \cod{x3} viejo y el bucle dio una vuelta de m\'as
+(\cod{x2 = 20} en vez de 15). Se encontr\'o con una traza ciclo a ciclo: en c13 se ve\'ia
+\cod{rs1E = rdM = 3} y \cod{RegWriteM = 1}, pero \cod{ForwardAE = 00}. Se reescribi\'o con
+\cod{always\_comb}. La prueba unitaria no lo hab\'ia detectado porque siempre cambiaba \cod{rs} al
+final; ahora fija \cod{rs} primero y cambia el resto despu\'es, y con eso la versi\'on antigua da
+13 fallos.
+
+\textbf{2. Dos programas eran ciegos a ``parar sin vaciar ID/EX''.} Con ese defecto (M7), el
+\cod{add} dependiente se ejecuta dos veces: la primera con la \emph{direcci\'on} del \cod{lw}
+adelantada desde EX/MEM. En la primera versi\'on de \cod{acumulador.s} esa direcci\'on era 0 (sumar
+0 no se nota), y en \cod{lw\_use.s} el dato~4 viv\'ia en la direcci\'on~4. El mutante pasaba todo. Se
+movieron los datos a las direcciones 16, 20 y 24, y ahora M7 falla en \cod{acumulador.s}.
+
+% =====================================================================
+\section{Ciclos: segmentado frente a monociclo}
+% =====================================================================
+
+El testbench mide los ciclos de los dos procesadores con el mismo programa. En el monociclo, los
+ciclos son las instrucciones ejecutadas ($N$, con CPI $=1$). En el segmentado, si la instrucci\'on
+\cod{fin} entra a IF en el ciclo $c$, la anterior termina WB al final de $c+3$. Adem\'as se cuentan las
+paradas ($S$) y los saltos tomados ($F$), y se verifica la f\'ormula
+\[
+\boxed{\;T_{\text{seg}} = N + 4 + S + 2F\;}
+\]
+donde 4 son los ciclos de llenado del pipeline, cada parada cuesta 1 ciclo y cada salto tomado 2.
+
+\begin{table}[!htbp]
+\centering\small
+\begin{tabular}{@{}l r r r r r c@{}}
+\toprule
+\textbf{Programa} & \textbf{$N$ (mono)} & \textbf{$T_{\text{seg}}$} & \textbf{$S$} & \textbf{$F$} &
+\textbf{CPI seg} & \textbf{$N+4+S+2F$} \\
+\midrule
+\cod{humo} & 4 & 8 & 0 & 0 & \num{2.00} & $4+4+0+0 = 8$ \checkmark \\
+\cod{completo} & 23 & 33 & 0 & 3 & \num{1.43} & $23+4+0+6 = 33$ \checkmark \\
+\cod{bytes} & 15 & 19 & 0 & 0 & \num{1.27} & $15+4+0+0 = 19$ \checkmark \\
+\cod{fwd\_dist} & 10 & 14 & 0 & 0 & \num{1.40} & $10+4+0+0 = 14$ \checkmark \\
+\cod{doble} & 12 & 16 & 0 & 0 & \num{1.33} & $12+4+0+0 = 16$ \checkmark \\
+\cod{x0} & 8 & 12 & 0 & 0 & \num{1.50} & $8+4+0+0 = 12$ \checkmark \\
+\cod{sw\_rd} & 15 & 19 & 0 & 0 & \num{1.27} & $15+4+0+0 = 19$ \checkmark \\
+\cod{lui\_jal} & 13 & 21 & 0 & 2 & \num{1.62} & $13+4+0+4 = 21$ \checkmark \\
+\cod{lw\_use} & 15 & 22 & 3 & 0 & \num{1.47} & $15+4+3+0 = 22$ \checkmark \\
+\cod{salto} & 27 & 45 & 0 & 7 & \num{1.67} & $27+4+0+14 = 45$ \checkmark \\
+\cod{acumulador} & 23 & 34 & 3 & 2 & \num{1.48} & $23+4+3+4 = 34$ \checkmark \\
+\bottomrule
+\end{tabular}
+\caption{Ciclos medidos en simulaci\'on. La \'ultima columna se calcul\'o aparte y coincide en los once
+programas.}
+\end{table}
+
+\textbf{Verificaci\'on a mano con \cod{completo.s}.} Instrucciones ejecutadas: 13 hasta el segundo
+\cod{beq} (incluido); luego \cod{addi x11}, \cod{addi x12}, \cod{lui}, \cod{addi x14} y \cod{jal}
+(18); \cod{add} y \cod{jalr} en \cod{duplica} (20); y \cod{addi}, \cod{sltu}, \cod{addi} al volver
+(23). Saltos tomados: el segundo \cod{beq}, \cod{jal} y \cod{jalr} ($F = 3$). No hay \cod{lw}
+seguido de uso ($S = 0$). Entonces $T_{\text{seg}} = 23 + 4 + 0 + 2\cdot 3 = 33$ ciclos, que coincide
+con la simulaci\'on, y $\mathrm{CPI} = 33/23 = \num{1.43}$.
+
+\textbf{En tiempo, no en ciclos.} El segmentado tarda m\'as ciclos, pero su ciclo de reloj es m\'as
+corto, porque dura la etapa m\'as lenta y no el camino completo. La gu\'ia no da retardos, as\'i que solo
+se puede estimar con un supuesto ideal: cinco etapas balanceadas y sin sobrecosto de los registros, es
+decir, $T_{c,\text{mono}} = 5\,T_{c,\text{seg}}$. Con eso:
+\[
+\text{Aceleraci\'on} = \frac{N \cdot T_{c,\text{mono}}}{T_{\text{seg}}\cdot T_{c,\text{seg}}}
+= \frac{23 \cdot 5}{33} \approx \num{3.48}.
+\]
+Para programas largos, el llenado (4 ciclos) se diluye y el CPI tiende a $1 + (S + 2F)/N$.
+
+\begin{respuesta}[Resultado]
+\cod{completo.s}: $\boxed{\text{monociclo } 23 \text{ ciclos},\ \text{segmentado } 33 \text{ ciclos},\
+\mathrm{CPI} = \num{1.43}}$. Con etapas ideales, $\approx \num{3.5}\times$ m\'as r\'apido en tiempo.
+\end{respuesta}
+
+% =====================================================================
+\section{Lo que cuesta ahora cada riesgo}
+% =====================================================================
+\begin{center}\small
+\begin{tabular}{@{}l l l l@{}}
+\toprule
+\textbf{Riesgo} & \textbf{Antes (programador)} & \textbf{Ahora (hardware)} & \textbf{Comprobado en} \\
+\midrule
+Datos a distancia 1 & dos \cod{nop} & 0 ciclos, desde EX/MEM & \cod{fwd\_dist.s} \\
+Datos a distancia 2 & un \cod{nop} & 0 ciclos, desde MEM/WB & \cod{fwd\_dist.s} \\
+Datos a distancia $\geq 3$ & ninguno & 0 ciclos, el banco & \cod{completo.s} (M12) \\
+\cod{lw} seguido de uso & dos \cod{nop} & 1 ciclo, evitable reordenando & \cod{lw\_use.s} \\
+Salto tomado & dos ranuras a mano & 2 ciclos, autom\'aticos & \cod{salto.s} \\
+\bottomrule
+\end{tabular}
+\end{center}
+El binario deja de estar atado a la profundidad del pipeline: los mismos \cod{.hex} del Taller~2 corren
+sin cambios y dejan el mismo estado.
+
+% =====================================================================
+\section{Consideraciones de dise\~no}
+% =====================================================================
+\begin{itemize}
+\item \textbf{Escritura del banco en el flanco de bajada} (secci\'on 2): se conect\'o el reloj invertido a
+  \cod{register\_file.sv} para que escriba en el primer medio ciclo sin modificar el m\'odulo.
+\item \textbf{\cod{funct3}, \cod{ALUSrcA} y \cod{Jalr}} viajan por los registros de segmentaci\'on
+  aunque la tabla de la secci\'on~2 no los mencione; sin ellos no funcionar\'ian los saltos condicionales,
+  los accesos de byte y media palabra, \cod{auipc} ni \cod{jalr}.
+\item \textbf{\cod{PCSrcE}} se calcula en EX con la misma l\'ogica del bloque~3 de
+  \cod{control\_unit}, que se instancia en ID sin cambios (con las banderas a cero).
+\item \textbf{Condici\'on de parada.} Se implement\'o tal como la define la gu\'ia, sin excluir
+  \cod{rdE = x0} ni distinguir las instrucciones que no usan \cod{rs2}. En una instrucci\'on tipo~I, los
+  bits 24:20 pertenecen al inmediato; si coinciden con el \cod{rd} de un \cod{lw} anterior, el pipeline
+  se detiene un ciclo de m\'as. El resultado sigue siendo correcto y ninguno de los programas de prueba
+  presenta ese caso. Se mantuvo as\'i porque la tabla de la secci\'on~12 es la especificaci\'on.
+\item \textbf{\cod{EX/MEM} lleva \cod{PCTarget}} aunque ninguna etapa posterior lo use, para respetar la
+  tabla de la secci\'on~2.
+\item \textbf{Burbuja = instrucci\'on \cod{0x00000000}.} El opcode \cod{0000000} no corresponde a
+  ninguna de las nueve filas de la tabla de control, as\'i que la unidad de control deja todas sus
+  se\~nales en el valor por defecto (sin escritura); el borrado de IF/ID equivale a un \cod{nop}.
+\item \textbf{Entorno de simulaci\'on.} Icarus Verilog 12. El c\'odigo es SystemVerilog sintetizable
+  est\'andar; solo los testbenches usan referencias jer\'arquicas, igual que los del Taller~2.
+\end{itemize}
+
+\appendix
+% =====================================================================
+\section{Los programas de prueba}
+% =====================================================================
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/fwd\_dist.s}]
+# =============================================================================
+# fwd_dist.s - Dependencias a distancia 1 y 2, por el operando A y por el B
+#
+# Se usa sub (no add) para que el orden de los operandos importe: si A y B se
+# cruzan, o si solo existe ForwardAE, el resultado cambia.
+#
+# Estado esperado:
+#   x1 = 7   x2 = 3   x3 = 4   x4 = -1 (0xFFFFFFFF)   x5 = 4   x6 = 1
+#   x7 = -1  x8 = -1
+# =============================================================================
+    addi  x1, x0, 7         # x1 = 7
+    addi  x2, x0, 3         # x2 = 3
+    sub   x3, x1, x2        # A a distancia 2 (x1), B a distancia 1 (x2): 4
+    sub   x4, x2, x3        # A a distancia 2 (x2), B a distancia 1 (x3): -1
+    sub   x5, x3, x0        # A a distancia 2 (x3): 4
+    sub   x6, x0, x4        # B a distancia 2 (x4): 1
+    sub   x7, x0, x6        # B a distancia 1 (x6): -1
+    add   x8, x7, x0        # A a distancia 1 (x7): -1
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+\end{lstlisting}
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/doble.s}]
+# =============================================================================
+# doble.s - Doble hazard: dos escrituras seguidas al mismo registro y una
+# lectura. Debe ganar EX/MEM (la mas reciente). Se prueba por A y por B.
+#
+# Estado esperado:
+#   x5 = 70  x6 = 71  x7 = 70  x8 = 71
+# Con la prioridad invertida saldria x6 = 4 y x8 = 4: plausible y equivocado.
+# =============================================================================
+    addi  x1, x0, 1
+    addi  x2, x0, 2
+    addi  x3, x0, 30
+    addi  x4, x0, 40
+    add   x5, x1, x2        # x5 = 3
+    add   x5, x3, x4        # x5 = 70   (vuelve a escribir x5)
+    add   x6, x5, x1        # lee x5 por A: 71
+    add   x7, x1, x2        # x7 = 3
+    add   x7, x3, x4        # x7 = 70
+    add   x8, x1, x7        # lee x7 por B: 71
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+\end{lstlisting}
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/x0.s}]
+# =============================================================================
+# x0.s - Instrucciones que escriben en x0 seguidas de lecturas de x0
+#
+# Sin la condicion rs != 0, el resultado tirado a x0 se adelanta y x0 deja de
+# valer cero.
+#
+# Estado esperado:
+#   x0 = 0   x1 = 5   x2 = 5   x3 = 1   x4 = 5
+# =============================================================================
+    addi  x1, x0, 5         # x1 = 5
+    addi  x0, x0, 77        # escribe en x0: se tira
+    add   x2, x0, x1        # x0 por A a distancia 1: x2 = 5 (mal: 82)
+    addi  x0, x1, 9         # otra escritura a x0 (14)
+    addi  x3, x0, 1         # x0 por A a distancia 1: x3 = 1 (mal: 15)
+    add   x4, x1, x0        # x0 por B a distancia 2: x4 = 5 (mal: 19)
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+\end{lstlisting}
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/sw\_rd.s}]
+# =============================================================================
+# sw_rd.s - Un sw (y un branch) cuyos bits 11:7 coinciden con un registro que
+# se lee justo despues.
+#
+# "sw x10, 8(x0)" tiene instr[11:7] = 8: sin la condicion RegWrite se anuncia
+# como escritura a x8 y adelanta la direccion (8) en vez del contenido de x8.
+#
+# Estado esperado:
+#   x8 = 100   x10 = 4   x12 = 55   x11 = 100   x13 = 55   x14 = 100
+#   Mem[2] (dir 8) = 4   Mem[3] (dir 12) = 4
+# =============================================================================
+    addi  x8,  x0, 100      # x8 = 100
+    addi  x12, x0, 55       # x12 = 55
+    addi  x10, x0, 4        # x10 = 4
+    nop
+    nop
+    nop
+    sw    x10, 8(x0)        # bits 11:7 = 8  -> "rd" falso x8
+    add   x11, x8, x0       # x8 por A a distancia 1: 100 (mal: 8)
+    sw    x10, 12(x0)       # bits 11:7 = 12 -> "rd" falso x12
+    nop
+    add   x13, x0, x12      # x12 por B a distancia 2: 55 (mal: 12)
+    bne   x0, x0, 8         # no tomado; bits 11:7 = 8 -> "rd" falso x8
+    add   x14, x0, x8       # x8 por B a distancia 1: 100 (mal: 0, el resultado del sub)
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+\end{lstlisting}
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/lui\_jal.s}]
+# =============================================================================
+# lui_jal.s - Instrucciones que escriben en rd algo que NO paso por la ALU
+# (lui, jal, jalr) o que la ALU calcula con el PC (auipc), seguidas de un uso
+# a distancia 1 y 2.
+#
+# Si EX/MEM solo lleva el resultado de la ALU, se adelanta basura.
+#
+# Estado esperado (las direcciones son las de este programa):
+#   x1 = 0x12345000   x2 = 0x12345678   x3 = 0xABCDE000   x4 = 0xABCDE000
+#   x5 = 0x14 (PC+4 del jal en 0x10)    x6 = 0x14
+#   x7 = 0x18 (auipc en 0x18)           x8 = 0x1C
+#   x9 = 0x28 (PC+4 del jalr en 0x24)   x10 = 0x28
+# =============================================================================
+    lui   x1, 0x12345       # 0x00  x1 = 0x12345000
+    addi  x2, x1, 0x678     # 0x04  distancia 1 desde lui: 0x12345678
+    lui   x3, 0xABCDE       # 0x08  x3 = 0xABCDE000
+    add   x4, x0, x3        # 0x0C  distancia 1 por B: 0xABCDE000
+    jal   x5, sig           # 0x10  x5 = 0x14
+sig:
+    addi  x6, x5, 0         # 0x14  distancia 1 desde jal: 0x14
+    auipc x7, 0             # 0x18  x7 = 0x18
+    addi  x8, x7, 4         # 0x1C  distancia 1 desde auipc: 0x1C
+    addi  x11, x0, 0x2C     # 0x20  direccion de "ret_aqui"
+    jalr  x9, 0(x11)        # 0x24  x9 = 0x28, salta a 0x2C
+    addi  x20, x0, 99       # 0x28  ranura: no debe ejecutarse
+ret_aqui:
+    addi  x10, x9, 0        # 0x2C  distancia 1 desde jalr: 0x28
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+\end{lstlisting}
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/lw\_use.s}]
+# =============================================================================
+# lw_use.s - load-use por rs1 y por rs2, un load con una instruccion
+# independiente antes del uso (distancia 2: no debe parar) y un load -> store.
+#
+# Los datos viven en direcciones distintas de su valor (21 en la 16, 4 en la
+# 20): asi un uso que reciba la direccion en vez del dato se nota.
+#
+# Paradas esperadas: exactamente 3 (rs1, rs2 y el lw -> sw).
+#
+# Estado esperado:
+#   x1 = 21  x2 = 4  x3 = 21  x4 = 21  x5 = 4  x6 = 4  x7 = 21  x8 = 42
+#   x9 = 1   x12 = 21
+#   Mem[4] = 21   Mem[5] = 4   Mem[6] = 21
+# =============================================================================
+    addi  x1, x0, 21
+    sw    x1, 16(x0)        # store a distancia 1 del addi: el dato se adelanta
+    addi  x2, x0, 4
+    sw    x2, 20(x0)
+    lw    x3, 16(x0)
+    add   x4, x3, x0        # load-use por rs1: x4 = 21   (1 parada)
+    lw    x5, 20(x0)
+    add   x6, x0, x5        # load-use por rs2: x6 = 4    (1 parada)
+    lw    x7, 16(x0)
+    addi  x9, x0, 1         # independiente
+    add   x8, x7, x7        # distancia 2: sin parada, x8 = 42
+    lw    x12, 16(x0)
+    sw    x12, 24(x0)       # load -> store: el dato del sw depende del lw (1 parada)
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+\end{lstlisting}
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/salto.s}]
+# =============================================================================
+# salto.s - Saltos tomados con instrucciones detras que escriben algo visible
+# (registros y memoria). Si falta FlushD o FlushE, dejan rastro.
+#
+# Cubre beq, bne, blt, bge, bltu, bgeu (tomados y no tomados) y jal.
+#
+# Estado esperado:
+#   x1 = 3  x2 = 3  x3 = 3  x4 = 7  x5 = -1  x6 = 1
+#   x21 = 6 (uno por cada condicional no tomado)
+#   x28 = x29 = x30 = x31 = 0       Mem[0] = Mem[1] = 0
+# =============================================================================
+    addi  x1, x0, 3
+    addi  x2, x0, 3
+    add   x3, x1, x0
+    beq   x3, x2, destino   # tomado (con forwarding de x3 a distancia 1)
+    addi  x30, x0, 99       # ranura 1: no debe dejar rastro
+    sw    x1, 0(x0)         # ranura 2: no debe escribir memoria
+destino:
+    addi  x4, x0, 7
+    jal   x0, sig           # salto incondicional: tambien vacia dos ranuras
+    addi  x31, x0, 99
+    sw    x1, 4(x0)
+sig:
+    addi  x5, x0, -1
+    addi  x6, x0, 1
+    # --- Los seis condicionales, tomados: cada ranura escribiria x28/x29 ---
+    bne   x5, x6, t1
+    addi  x28, x0, 1
+    addi  x29, x0, 1
+t1: blt   x5, x6, t2        # -1 < 1 con signo
+    addi  x28, x0, 2
+    addi  x29, x0, 2
+t2: bge   x6, x5, t3        # 1 >= -1 con signo
+    addi  x28, x0, 3
+    addi  x29, x0, 3
+t3: bltu  x6, x5, t4        # 1 < 0xFFFFFFFF sin signo
+    addi  x28, x0, 4
+    addi  x29, x0, 4
+t4: bgeu  x5, x6, t5        # 0xFFFFFFFF >= 1 sin signo
+    addi  x28, x0, 5
+    addi  x29, x0, 5
+t5:
+    # --- Los seis, NO tomados: cada uno suma 1 a x21 ---
+    beq   x5, x6, mal
+    addi  x21, x21, 1
+    bne   x1, x2, mal
+    addi  x21, x21, 1
+    blt   x6, x5, mal
+    addi  x21, x21, 1
+    bge   x5, x6, mal
+    addi  x21, x21, 1
+    bltu  x5, x6, mal
+    addi  x21, x21, 1
+    bgeu  x6, x5, mal
+    addi  x21, x21, 1
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+mal:
+    addi  x31, x0, 66
+    beq   x0, x0, fin
+\end{lstlisting}
+\begin{lstlisting}[language=RVASM,title={\small\ttfamily prog/acumulador.s}]
+# =============================================================================
+# acumulador.s - lw seguido de uso dentro de un bucle con acumulador.
+#
+# Si se para sin meter burbuja, el add se ejecuta dos veces por vuelta: la
+# primera con la DIRECCION del lw adelantada desde EX/MEM y la segunda con el
+# dato. Por eso el dato vive en la direccion 16 y no en la 0: con direccion 0
+# la ejecucion repetida sumaria cero y el defecto quedaria invisible (es lo
+# que paso en la primera version de este programa).
+#
+# Estado esperado:
+#   x1 = 5   x2 = 15 (3 vueltas de +5)   x3 = 0   x4 = 5
+#   x5 = 3 (una vez por vuelta)          Mem[4] = 5   Mem[5] = 15
+# =============================================================================
+    addi  x1, x0, 5
+    sw    x1, 16(x0)        # Mem[4] (dir 16) = 5
+    addi  x2, x0, 0         # acumulador
+    addi  x3, x0, 3         # contador
+    addi  x5, x0, 0
+bucle:
+    lw    x4, 16(x0)
+    add   x2, x2, x4        # load-use con acumulador
+    addi  x5, x5, 1         # otro acumulador
+    addi  x3, x3, -1
+    bne   x3, x0, bucle     # tomado 2 veces
+    sw    x2, 20(x0)        # Mem[5] (dir 20) = 15
+    nop
+    nop
+fin:
+    beq   x0, x0, fin
+\end{lstlisting}
+
+
+
+
+\end{document}

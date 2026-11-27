@@ -1,0 +1,8 @@
+build/
+*.hex
+*.vcd
+*.out
+# LaTeX
+*.aux
+*.log
+*.toc

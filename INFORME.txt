@@ -1,0 +1,68 @@
+TALLER 3 - El hardware se protege solo
+Arquitectura de Computadores - UTP
+Estudiantes: Juan Pablo Loaiza Bedoya, Javier Parra Gonzales y Estiven Muñoz Montoya
+
+Como correr todo:   make            (los 7 testbenches)
+                    make unidades   (pipe_reg, forwarding, riesgos por separado)
+                    make pipeline   (11 programas, segmentado contra monociclo)
+
+1. QUE SITUACIONES PROBAMOS Y CON QUE PROGRAMA
+-----------------------------------------------
+Cada programa corre a la vez en el monociclo del Taller 2 (referencia) y en
+el segmentado. Se comprueban los valores de la cabecera del .s y ademas que
+los 32 registros y las 64 primeras palabras de memoria son identicos.
+
+  Situacion (seccion 19)                          Programa
+  Distancia 1 y 2, por A y por B                  prog/fwd_dist.s
+  Dos escrituras seguidas y una lectura           prog/doble.s
+  rd = x0 seguido de lectura de x0                prog/x0.s
+  sw (y bne) con bits 11:7 = registro leido       prog/sw_rd.s
+  lui / jal / auipc / jalr y uso a distancia 1    prog/lui_jal.s
+  lw-uso por rs1 y rs2, lw-indep-uso, lw->sw      prog/lw_use.s
+  Salto tomado con ranuras que escriben           prog/salto.s
+  lw-uso dentro de un bucle con acumulador        prog/acumulador.s
+  Regresion del Taller 2                          humo.s, completo.s, bytes.s
+
+La fila "ResultSrcE = 11 no debe parar" solo se puede ver probando la unidad
+sola: esta en tb/tb_unidades.sv junto con las 8 filas de la tabla de la
+seccion 6 (por A y por B) y las 8 de la seccion 12.
+
+Resultado: tb_unidades 78/78, tb_pipeline 75/75, regresion del Taller 2 86/86.
+
+Ademas inyectamos a proposito los 13 defectos de la seccion 19 (uno a la vez,
+en una copia) y comprobamos que cada uno hace fallar al menos una prueba.
+El de "solo ResultSrcE[0]" solo lo detecta tb_unidades, como dice la guia.
+
+2. QUE NOS SALIO MAL Y COMO LO ENCONTRAMOS
+-------------------------------------------
+a) La unidad de forwarding usaba una funcion que leia rdM y RegWriteM sin
+   recibirlos como argumentos. En un assign, Icarus solo reevalua la funcion
+   cuando cambian sus argumentos (rs1E, rs2E). Si dos instrucciones seguidas
+   leen el mismo registro (addi x3,x3,-1 y bne x3,x0,bucle), rs1E no cambia y
+   ForwardAE se queda en 00: el bne compara el x3 viejo y el bucle da una
+   vuelta de mas. Lo delato acumulador.s (x2 = 20 en vez de 15) y lo
+   encontramos con una traza ciclo a ciclo: rs1E = rdM = 3, RegWriteM = 1 y
+   ForwardAE = 00. Se reescribio con always_comb. La prueba unitaria no lo
+   habia visto porque siempre cambiaba rs al final; ahora fija rs primero.
+
+b) Dos programas de prueba eran ciegos a "parar sin vaciar ID/EX". Con ese
+   defecto el add se ejecuta dos veces: la primera con la DIRECCION del lw
+   adelantada. En acumulador.s la direccion era 0 (sumar 0 no se nota) y en
+   lw_use.s el dato 4 vivia en la direccion 4. Lo vimos al inyectar los
+   defectos: ese mutante pasaba todo. Se movieron los datos a las
+   direcciones 16, 20 y 24 y ahora el defecto falla en acumulador.s.
+
+3. CICLOS: SEGMENTADO FRENTE A MONOCICLO
+-----------------------------------------
+Programa prog/completo.s (23 instrucciones ejecutadas, 3 saltos tomados:
+beq, jal y jalr, 0 paradas):
+  monociclo   23 ciclos (CPI = 1)
+  segmentado  33 ciclos = 23 + 4 (llenado) + 0 (paradas) + 2 x 3 (saltos)
+  CPI = 33/23 = 1.43
+
+En ciclos el segmentado tarda mas, pero su ciclo de reloj es mas corto: dura
+la etapa mas lenta y no el camino entero. Con etapas ideales (reloj 5 veces
+mas rapido) el tiempo seria 33/(23 x 5) = 0.29 del monociclo, es decir unas
+3.5 veces mas rapido. (Supuesto: no tenemos retardos reales de cada etapa.)
+
+Todos los programas: ver la tabla que imprime "make pipeline".
